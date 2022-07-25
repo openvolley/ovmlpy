@@ -16,3 +16,49 @@
 ## install.packages("remotes")
 remotes::install_github("openvolley/ovmlpy")
 ```
+
+The `ovmlpy` package provides image and video machine learning tools for
+volleyball analytics. It provides similar functionality to the
+[ovml](https://github.com/openvolley/ovml) package, but `ovmlpy` uses a
+Python-based implementation which should offer improved performance.
+`ovmlpy` takes care of installing Python and required dependencies: you
+do not need an existing Python installation on your system. However, if
+you wish to use a GPU card for improved performance you will need to
+ensure that the drivers are installed on your system.
+
+Note that you probably can’t use `ovml` and `ovmlpy` in the same R
+session, because of conflicts in shared libraries.
+
+`ovmlpy` includes the [YOLO v7](https://github.com/WongKinYiu/yolov7)
+object detection algorithm and an experimental version of this network
+specifically for detecting volleyballs.
+
+This implementation draws heavily from
+[WongKinYiu/yolov7](https://github.com/WongKinYiu/yolov7).
+
+## Example
+
+``` r
+library(ovmlpy)
+img <- ovml_example_image()
+ovml_ggplot(img)
+```
+
+<img src="man/figures/README-ex1-1.png" width="100%" />
+
+Construct the network. The first time this function is run, it will
+download and cache the network weights file (\~70MB, depending on
+network version).
+
+``` r
+dn <- ovml_yolo()
+```
+
+Now we can use the network to detect objects in our image:
+
+``` r
+dets <- ovml_yolo_detect(dn, img)
+ovml_ggplot(img, dets)
+```
+
+<img src="man/figures/README-ex3-1.png" width="100%" />
