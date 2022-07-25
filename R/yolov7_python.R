@@ -132,7 +132,7 @@ ovml_yolo_detect <- function(net, image_file, conf = 0.25, nms_conf = 0.45, clas
     }
     imsz <- magick::image_info(magick::image_read(image_file))
     ry7 <- reticulate::import_from_path("yolor", path = ovml_yolo7_python_dir())
-    det <- ry7$detect(net, source = image_file, conf_thres = conf, iou_thres = nms_conf, classes = classes)
+    blah <- reticulate::py_capture_output(reticulate::py_suppress_warnings(det <- ry7$detect(net, source = image_file, conf_thres = conf, iou_thres = nms_conf, classes = classes)))
 
     ## dets are class xywh conf (xywh normalized)
     data.frame(image_number = 1L, class = net$names[det[, 1] + 1L], score = det[, 6], xmin = round((det[, 2] - det[, 4] / 2) * imsz$width), xmax = round((det[, 2] + det[, 4] / 2) * imsz$width), ymax = round((1 - det[, 3] + det[, 5] / 2) * imsz$height), ymin = round((1 - det[, 3] - det[, 5] / 2) * imsz$height), image_file = image_file)
