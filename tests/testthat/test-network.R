@@ -3,7 +3,7 @@ context("overall network tests")
 dn <- NULL
 
 test_that("basic inference", {
-    skip_on_cran()
+    skip_on_ci()
     dn <- ovml_yolo(version = "7")
     img <- ovml_example_image()
     res <- ovml_yolo_detect(dn, img, conf = 0.6)
