@@ -73,14 +73,14 @@ ovml_yolo <- function(version = "7", device = "cpu", weights_file = "auto", ...)
         w_url <- "https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7-tiny.pt"
         expected_sha1 <- "c42311ff54e2a962725d6cac3b66d4b1e04eda2d"
     } else if (version == "7-tiny-mvb") {
-        w_url <- "https://github.com/openvolley/ovml/releases/download/v0.1.0/yolov7-tiny-mvb.pt"
+        w_url <- "https://github.com/openvolley/ovmlpy/releases/download/v0.1.0/yolov7-tiny-mvb.pt"
         expected_sha1 <- "cbbd5f7b23d482b431c800c5e578893a9e78aa03"
     } else if (version == "7-w6-pose") {
         w_url <- "https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7-w6-pose.pt"
         expected_sha1 <- "9afe19a0cb2a48e9f60a354a676b9cade69d7e30"
     } else {
         ## "7-mvb"
-        w_url <- "https://github.com/openvolley/ovml/releases/download/v0.1.0/yolov7-mvb.pt"
+        w_url <- "https://github.com/openvolley/ovmlpy/releases/download/v0.1.0/yolov7-mvb.pt"
         expected_sha1 <- "ee5f4f3a0c7cf06615c179805772ed5d6844e81c"
     }
     if (length(weights_file) && nzchar(weights_file) && !is.na(weights_file)) {

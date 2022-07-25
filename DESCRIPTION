@@ -1,6 +1,6 @@
 Package: ovmlpy
 Title: Machine Learning Tools for Volleyball
-Version: 0.0.1
+Version: 0.0.2
 Authors@R: c(person("Ben", "Raymond", role = c("aut", "cre"), email = "ben@untan.gl"),
              person("Adrien", "Ickowicz", role = "aut"),
              person("openvolley.org", role = "org"))
@@ -20,4 +20,4 @@ Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
-Remotes: openvolley/ovideo, openvolley/ovml.common
+Remotes: openvolley/ovml.common
