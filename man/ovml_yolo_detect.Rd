@@ -4,7 +4,15 @@
 \alias{ovml_yolo_detect}
 \title{Detect objects in image using a YOLO network}
 \usage{
-ovml_yolo_detect(net, image_file, conf = 0.25, nms_conf = 0.45, classes, ...)
+ovml_yolo_detect(
+  net,
+  image_file,
+  conf = 0.25,
+  nms_conf = 0.45,
+  classes,
+  as,
+  ...
+)
 }
 \arguments{
 \item{net}{yolo: as returned by \code{\link[=ovml_yolo]{ovml_yolo()}}}
@@ -16,6 +24,8 @@ ovml_yolo_detect(net, image_file, conf = 0.25, nms_conf = 0.45, classes, ...)
 \item{nms_conf}{scalar: non-max suppression confidence level}
 
 \item{classes}{character: vector of class names, only detections of these classes will be returned}
+
+\item{as}{string: for object detection networks, "boxes" (default and only option); for pose detection "segments" (default) or "keypoints"}
 
 \item{...}{: currently ignored}
 }

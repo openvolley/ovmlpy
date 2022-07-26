@@ -1,6 +1,6 @@
 Package: ovmlpy
 Title: Machine Learning Tools for Volleyball
-Version: 0.0.2
+Version: 0.0.3
 Authors@R: c(person("Ben", "Raymond", role = c("aut", "cre"), email = "ben@untan.gl"),
              person("Adrien", "Ickowicz", role = "aut"),
              person("openvolley.org", role = "org"))
@@ -10,7 +10,7 @@ Imports:
   assertthat,
   magick,
   magrittr,
-  ovml.common,
+  ovml.common (>= 0.0.4),
   rappdirs,
   reticulate
 Suggests:

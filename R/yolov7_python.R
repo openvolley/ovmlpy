@@ -65,7 +65,9 @@ ovml_yolo <- function(version = "7", device = "cpu", weights_file = "auto", ...)
     if (is.null(ovml_yolo7_python_dir())) stop("cannot find system dependencies, have you run ovml_yolo7_python_setup()?")
     if (is.numeric(version)) version <- as.character(version)
     assert_that(version %in% c("7", "7-tiny", "7-mvb", "7-tiny-mvb", "7-w6-pose"))
+    image_size <- 640L
     ## sort out the weights file
+    detfun <- "detect"
     if (version == "7") {
         w_url <- "https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7.pt"
         expected_sha1 <- "723b07225efa90d86eb983713b66fd8be82dfb9f"
@@ -78,6 +80,8 @@ ovml_yolo <- function(version = "7", device = "cpu", weights_file = "auto", ...)
     } else if (version == "7-w6-pose") {
         w_url <- "https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7-w6-pose.pt"
         expected_sha1 <- "9afe19a0cb2a48e9f60a354a676b9cade69d7e30"
+        detfun <- "detect_pose"
+        image_size <- 960L
     } else {
         ## "7-mvb"
         w_url <- "https://github.com/openvolley/ovmlpy/releases/download/v0.1.0/yolov7-mvb.pt"
@@ -93,7 +97,8 @@ ovml_yolo <- function(version = "7", device = "cpu", weights_file = "auto", ...)
     envname <- "ovml-yolov7"
     reticulate::use_virtualenv(envname)
     ry7 <- reticulate::import_from_path("yolor", path = ovml_yolo7_python_dir())
-    blah <- reticulate::py_capture_output(out <- ry7$get_model(weights = weights_file))
+    blah <- reticulate::py_capture_output(out <- ry7$get_model(weights = weights_file, device = device, img_sz = image_size))
+    out$ovml_detfun <- detfun
     out
 }
 
@@ -106,6 +111,7 @@ ovml_yolo <- function(version = "7", device = "cpu", weights_file = "auto", ...)
 #' @param conf scalar: confidence level
 #' @param nms_conf scalar: non-max suppression confidence level
 #' @param classes character: vector of class names, only detections of these classes will be returned
+#' @param as string: for object detection networks, "boxes" (default and only option); for pose detection "segments" (default) or "keypoints"
 #' @param ... : currently ignored
 # @param batch_size integer: the number of images to process as a batch. Increasing `batch_size` will make processing of multiple images faster, but requires more memory
 #'
@@ -121,7 +127,7 @@ ovml_yolo <- function(version = "7", device = "cpu", weights_file = "auto", ...)
 #'   ovml_ggplot(img, res)
 #' }
 #' @export
-ovml_yolo_detect <- function(net, image_file, conf = 0.25, nms_conf = 0.45, classes, ...) {
+ovml_yolo_detect <- function(net, image_file, conf = 0.25, nms_conf = 0.45, classes, as, ...) {
     ##reticulate::use_virtualenv(envname)
     if (missing(classes)) {
         classes <- NULL
@@ -132,9 +138,14 @@ ovml_yolo_detect <- function(net, image_file, conf = 0.25, nms_conf = 0.45, clas
     }
     imsz <- magick::image_info(magick::image_read(image_file))
     ry7 <- reticulate::import_from_path("yolor", path = ovml_yolo7_python_dir())
-    blah <- reticulate::py_capture_output(reticulate::py_suppress_warnings(det <- ry7$detect(net, source = image_file, conf_thres = conf, iou_thres = nms_conf, classes = classes)))
-
-    ## dets are class xywh conf (xywh normalized)
-    data.frame(image_number = 1L, class = net$names[det[, 1] + 1L], score = det[, 6], xmin = round((det[, 2] - det[, 4] / 2) * imsz$width), xmax = round((det[, 2] + det[, 4] / 2) * imsz$width), ymax = round((1 - det[, 3] + det[, 5] / 2) * imsz$height), ymin = round((1 - det[, 3] - det[, 5] / 2) * imsz$height), image_file = image_file)
+    if (!"ovml_detfun" %in% names(net)) net$ovml_detfun <- "detect"
+    if (net$ovml_detfun %in% "detect_pose") {
+        if (missing(as) || length(as) < 1 || !as %in% c("keypoints", "segments")) as <- "segments"
+        pose <- ry7$detect_pose(net, source = image_file, conf_thres = conf, iou_thres = nms_conf)
+        process_pose_dets(pose, original_w = imsz$width, original_h = imsz$height, input_image_size = net$imgsz, as = as, letterboxing = FALSE)
+    } else {
+        blah <- reticulate::py_capture_output(reticulate::py_suppress_warnings(det <- ry7$detect(net, source = image_file, conf_thres = conf, iou_thres = nms_conf, classes = classes)))
+        ## dets are class xywh conf (xywh normalized)
+        data.frame(image_number = 1L, class = net$names[det[, 1] + 1L], score = det[, 6], xmin = round((det[, 2] - det[, 4] / 2) * imsz$width), xmax = round((det[, 2] + det[, 4] / 2) * imsz$width), ymax = round((1 - det[, 3] + det[, 5] / 2) * imsz$height), ymin = round((1 - det[, 3] - det[, 5] / 2) * imsz$height), image_file = image_file)
+    }
 }
-
