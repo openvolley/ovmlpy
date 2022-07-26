@@ -36,29 +36,43 @@ specifically for detecting volleyballs.
 This implementation draws heavily from
 [WongKinYiu/yolov7](https://github.com/WongKinYiu/yolov7).
 
+The first time you use `ovmlpy`, it will download and set up Python in a
+virtual environment for use by this package. The first time use a new
+type of network, it will also download the associated network weights
+file.
+
 ## Example
+
+Construct the network. The first time this function is run for each type
+of network, it will download and cache the network weights file (\~70MB,
+depending on network version).
 
 ``` r
 library(ovmlpy)
-img <- ovml_example_image()
-ovml_ggplot(img)
-```
-
-<img src="man/figures/README-ex1-1.png" width="100%" />
-
-Construct the network. The first time this function is run, it will
-download and cache the network weights file (\~70MB, depending on
-network version).
-
-``` r
 dn <- ovml_yolo()
 ```
 
-Now we can use the network to detect objects in our image:
+Now we can use the network to detect objects in an image:
 
 ``` r
+img <- ovml_example_image()
 dets <- ovml_yolo_detect(dn, img)
 ovml_ggplot(img, dets)
+```
+
+<img src="man/figures/README-ex2-1.png" width="100%" />
+
+Or detect human poses (experimental!):
+
+``` r
+dn2 <- ovml_yolo("7-w6-pose")
+dets2 <- ovml_yolo_detect(dn2, img)
+
+library(ggplot2)
+library(ggsci)
+ovml_ggplot(img) +
+    geom_segment(data = dets2, aes(x1, y1, xend = x2, yend = y2, col = segment), size = 1.5) +
+    scale_color_d3(palette = "category20", guide = "none")
 ```
 
 <img src="man/figures/README-ex3-1.png" width="100%" />
