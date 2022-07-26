@@ -18,7 +18,7 @@ ovml_yolo7_python_setup <- function() {
     ## 3. install yolov7 if needed from https://github.com/WongKinYiu/yolov7
     y7dir <- ovml_yolo7_python_dir(install = TRUE)
     ## 4. copy our py file
-    file.copy(system.file("extdata/yolov7/python/yolor.py", package = "ovml", mustWork = TRUE), y7dir, overwrite = TRUE)
+    file.copy(system.file("extdata/yolov7/python/yolor.py", package = "ovmlpy", mustWork = TRUE), y7dir, overwrite = TRUE)
 
     invisible(TRUE)
 
@@ -46,7 +46,7 @@ ovml_yolo7_python_dir <- function(install = FALSE) {
 #' @param version integer or string: one of
 #' - 7 or "7-tiny" : YOLO v7 or v7-tiny
 #'
-#' @param device string: "cpu" or 0, 1, 2 etc for GPU devices
+#' @param device string or numeric: "cpu" or 0, 1, 2 etc for GPU devices
 #' @param weights_file string: either the path to the weights file that already exists on your system or "auto". If "auto", the weights file will be downloaded if necessary and stored in the directory given by [ovml_cache_dir()]
 #' @param ... : currently ignored
 #'
@@ -64,6 +64,7 @@ ovml_yolo7_python_dir <- function(install = FALSE) {
 ovml_yolo <- function(version = "7", device = "cpu", weights_file = "auto", ...) {
     if (is.null(ovml_yolo7_python_dir())) stop("cannot find system dependencies, have you run ovml_yolo7_python_setup()?")
     if (is.numeric(version)) version <- as.character(version)
+    if (is.numeric(device)) device <- as.character(device)
     assert_that(version %in% c("7", "7-tiny", "7-mvb", "7-tiny-mvb", "7-w6-pose"))
     image_size <- 640L
     ## sort out the weights file
@@ -96,6 +97,8 @@ ovml_yolo <- function(version = "7", device = "cpu", weights_file = "auto", ...)
     if (is.null(weights_file) || !file.exists(weights_file)) stop("weights file does not exist")
     envname <- "ovml-yolov7"
     reticulate::use_virtualenv(envname)
+    ## re-copy our py file in case this package has been updated
+    file.copy(system.file("extdata/yolov7/python/yolor.py", package = "ovmlpy", mustWork = TRUE), ovml_yolo7_python_dir(), overwrite = TRUE)
     ry7 <- reticulate::import_from_path("yolor", path = ovml_yolo7_python_dir())
     blah <- reticulate::py_capture_output(out <- ry7$get_model(weights = weights_file, device = device, img_sz = image_size))
     out$ovml_detfun <- detfun
@@ -136,7 +139,8 @@ ovml_yolo_detect <- function(net, image_file, conf = 0.25, nms_conf = 0.45, clas
         ## convert to 0-based class number
         if (is.character(classes)) classes <- which(net$names %in% classes) - 1L
     }
-    imsz <- magick::image_info(magick::image_read(image_file))
+    ##    imsz <- magick::image_info(magick::image_read(image_file))
+    imsz <- list(width = 1280, height = 720) #!!!
     ry7 <- reticulate::import_from_path("yolor", path = ovml_yolo7_python_dir())
     if (!"ovml_detfun" %in% names(net)) net$ovml_detfun <- "detect"
     if (net$ovml_detfun %in% "detect_pose") {
@@ -144,8 +148,17 @@ ovml_yolo_detect <- function(net, image_file, conf = 0.25, nms_conf = 0.45, clas
         pose <- ry7$detect_pose(net, source = image_file, conf_thres = conf, iou_thres = nms_conf)
         process_pose_dets(pose, original_w = imsz$width, original_h = imsz$height, input_image_size = net$imgsz, as = as, letterboxing = FALSE)
     } else {
-        blah <- reticulate::py_capture_output(reticulate::py_suppress_warnings(det <- ry7$detect(net, source = image_file, conf_thres = conf, iou_thres = nms_conf, classes = classes)))
-        ## dets are class xywh conf (xywh normalized)
-        data.frame(image_number = 1L, class = net$names[det[, 1] + 1L], score = det[, 6], xmin = round((det[, 2] - det[, 4] / 2) * imsz$width), xmax = round((det[, 2] + det[, 4] / 2) * imsz$width), ymax = round((1 - det[, 3] + det[, 5] / 2) * imsz$height), ymin = round((1 - det[, 3] - det[, 5] / 2) * imsz$height), image_file = image_file)
+        ## the python detection handles either a single file name, directory name, file glob pattern
+        ## if we've been given more than one image_file input, loop over them
+        out <- do.call(rbind, lapply(seq_along(image_file), function(i) {
+            blah <- reticulate::py_capture_output(reticulate::py_suppress_warnings(det <- ry7$detect(net, source = image_file[i], conf_thres = conf, iou_thres = nms_conf, classes = classes)))
+            imgs <- det[[2]] ## file names, in case we passed e.g. a directory name
+            det <- det[[1]]
+            ## dets are class xywh conf (xywh normalized)
+            data.frame(outer_i = i, image_number = as.integer(det[, 1]), class = net$names[det[, 2] + 1L], score = det[, 7], xmin = round((det[, 3] - det[, 5] / 2) * imsz$width), xmax = round((det[, 3] + det[, 5] / 2) * imsz$width), ymax = round((1 - det[, 4] + det[, 6] / 2) * imsz$height), ymin = round((1 - det[, 4] - det[, 6] / 2) * imsz$height), image_file = imgs[det[, 1]])
+        }))
+        ## re-count image numbers
+        out$image_number <- as.integer(c(0, cumsum(diff(out$outer_i) | diff(out$image_number) != 0))) + 1L
+        out[, setdiff(names(out), "outer_i")]
     }
 }
