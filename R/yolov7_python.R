@@ -139,26 +139,44 @@ ovml_yolo_detect <- function(net, image_file, conf = 0.25, nms_conf = 0.45, clas
         ## convert to 0-based class number
         if (is.character(classes)) classes <- which(net$names %in% classes) - 1L
     }
-    ##    imsz <- magick::image_info(magick::image_read(image_file))
-    imsz <- list(width = 1280, height = 720) #!!!
     ry7 <- reticulate::import_from_path("yolor", path = ovml_yolo7_python_dir())
     if (!"ovml_detfun" %in% names(net)) net$ovml_detfun <- "detect"
     if (net$ovml_detfun %in% "detect_pose") {
         if (missing(as) || length(as) < 1 || !as %in% c("keypoints", "segments")) as <- "segments"
-        pose <- ry7$detect_pose(net, source = image_file, conf_thres = conf, iou_thres = nms_conf)
-        process_pose_dets(pose, original_w = imsz$width, original_h = imsz$height, input_image_size = net$imgsz, as = as, letterboxing = FALSE)
+        out <- do.call(rbind, lapply(seq_along(image_file), function(i) {
+            imsz <- magick::image_info(magick::image_read(image_file[i]))
+            blah <- reticulate::py_capture_output(reticulate::py_suppress_warnings(pose <- ry7$detect_pose(net, source = image_file[i], conf_thres = conf, iou_thres = nms_conf)))
+            do.call(rbind, lapply(pose, function(z) {
+                this <- process_pose_dets(z[[3]], original_w = imsz$width, original_h = imsz$height, input_image_size = net$imgsz, as = as, letterboxing = FALSE)
+                if (is.null(this)) {
+                    this <- if (as == "segments") data.frame(outer_i = i, image_number = 1L, object = NA_integer_, segment = NA_integer_, x1 = NA_real_, x2 = NA_real_, y1 = NA_real_, y2 = NA_real_, conf1 = NA_real_, conf2 = NA_real_, image_file = NA_character_) else data.frame(outer_i = i, image_number = 1L, object = NA_integer_, keypoint = NA_integer_, x = NA_real_, y = NA_real_, conf = NA_real_, image_file = NA_character_)
+                } else {
+                    this$outer_i <- i
+                    this$image_number <- z[[1]]
+                    this$image_file <- z[[2]]
+                }
+                this
+            }))
+        }))
     } else {
         ## the python detection handles either a single file name, directory name, file glob pattern
         ## if we've been given more than one image_file input, loop over them
         out <- do.call(rbind, lapply(seq_along(image_file), function(i) {
+            imsz <- magick::image_info(magick::image_read(image_file[i]))
             blah <- reticulate::py_capture_output(reticulate::py_suppress_warnings(det <- ry7$detect(net, source = image_file[i], conf_thres = conf, iou_thres = nms_conf, classes = classes)))
             imgs <- det[[2]] ## file names, in case we passed e.g. a directory name
             det <- det[[1]]
-            ## dets are class xywh conf (xywh normalized)
-            data.frame(outer_i = i, image_number = as.integer(det[, 1]), class = net$names[det[, 2] + 1L], score = det[, 7], xmin = round((det[, 3] - det[, 5] / 2) * imsz$width), xmax = round((det[, 3] + det[, 5] / 2) * imsz$width), ymax = round((1 - det[, 4] + det[, 6] / 2) * imsz$height), ymin = round((1 - det[, 4] - det[, 6] / 2) * imsz$height), image_file = imgs[det[, 1]])
+            if (nrow(det) > 0) {
+                ## dets are class xywh conf (xywh normalized)
+                data.frame(outer_i = i, image_number = as.integer(det[, 1]), class = net$names[det[, 2] + 1L], score = det[, 7], xmin = round((det[, 3] - det[, 5] / 2) * imsz$width), xmax = round((det[, 3] + det[, 5] / 2) * imsz$width), ymax = round((1 - det[, 4] + det[, 6] / 2) * imsz$height), ymin = round((1 - det[, 4] - det[, 6] / 2) * imsz$height), image_file = imgs[det[, 1]])
+            } else {
+                ## placeholder row
+                data.frame(outer_i = i, image_number = 1L, class = NA_integer_, score = NA_real_, xmin = NA_real_, xmax = NA_real_, ymax = NA_real_, ymin = NA_real_, image_file = NA_character_)
+            }
         }))
-        ## re-count image numbers
-        out$image_number <- as.integer(c(0, cumsum(diff(out$outer_i) | diff(out$image_number) != 0))) + 1L
-        out[, setdiff(names(out), "outer_i")]
     }
+    ## re-count image numbers
+    ## note that image numbers are not guaranteed to be correct if directory names have been passed in
+    out$image_number <- as.integer(c(0, cumsum(diff(out$outer_i) | diff(out$image_number) != 0))) + 1L
+    out[!is.na(out$image_file), setdiff(names(out), "outer_i")]
 }

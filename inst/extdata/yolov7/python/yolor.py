@@ -27,7 +27,6 @@ def detect(model, source, augment=True, conf_thres=0.25, iou_thres=0.45, agnosti
         stride = int(model.stride.max())  # model stride
         # Set Dataloader
         dataset = LoadImages(source, img_size=model.imgsz, stride=stride)
-        # Get names and colors
         # Run inference
         if device.type != 'cpu':
             model(torch.zeros(1, 3, model.imgsz, model.imgsz).to(device).type_as(next(model.parameters())))  # run once
@@ -62,24 +61,28 @@ def detect(model, source, augment=True, conf_thres=0.25, iou_thres=0.45, agnosti
     return [np.array(out), pths]
 
 
-import cv2
-from torchvision import transforms
-from utils.datasets import letterbox
 from utils.general import non_max_suppression_kpt
 from utils.plots import output_to_keypoint
 
 def detect_pose(model, source, conf_thres=0.25, iou_thres=0.65):
     with torch.no_grad():
-        image = cv2.imread(source)
-        image = letterbox(image, 960, stride=64, auto=True)[0]
-        image_ = image.copy()
-        image = transforms.ToTensor()(image)
-        image = torch.tensor(np.array([image.numpy()]))
         device = select_device(model.device)
-        image = image.to(device)
         half = device.type != 'cpu'  # half precision only supported on CUDA
-        image = image.half() if half else image.float()  # uint8 to fp16/32
-        output, _ = model(image)
-        output = non_max_suppression_kpt(output, conf_thres, iou_thres, nc=model.yaml['nc'], nkpt=model.yaml['nkpt'], kpt_label=True)
-        output = output_to_keypoint(output)
-    return output
+        stride = int(model.stride.max())  # model stride
+        # Set Dataloader
+        dataset = LoadImages(source, img_size=model.imgsz, stride=stride)
+
+        out = []
+        imnum = 0
+        for path, img, im0s, vid_cap in dataset:
+            imnum += 1
+            img = torch.from_numpy(img).to(device)
+            img = img.half() if half else img.float()  # uint8 to fp16/32
+            img /= 255.0  # 0 - 255 to 0.0 - 1.0
+            if img.ndimension() == 3:
+                img = img.unsqueeze(0)
+            output, _ = model(img)
+            output = non_max_suppression_kpt(output, conf_thres, iou_thres, nc=model.yaml['nc'], nkpt=model.yaml['nkpt'], kpt_label=True)
+            output = output_to_keypoint(output)
+            out.append([imnum, path, output])
+    return out

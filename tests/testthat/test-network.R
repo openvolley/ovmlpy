@@ -13,3 +13,8 @@ test_that("basic inference", {
     res <- ovml_yolo_detect(dn, img, conf = 0.2, classes = "bench")
     expect_true(setequal(res$class, c("bench")))
 })
+
+
+test_that("cuda fails on cpu-only system", {
+    expect_error(ovml_yolo(device = 0), "CUDA unavailable")
+})
