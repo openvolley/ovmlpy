@@ -162,7 +162,8 @@ ovml_yolo_detect <- function(net, image_file, conf = 0.25, nms_conf = 0.45, clas
         ## the python detection handles either a single file name, directory name, file glob pattern
         ## if we've been given more than one image_file input, loop over them
         out <- do.call(rbind, lapply(seq_along(image_file), function(i) {
-            imsz <- magick::image_info(magick::image_read(image_file[i]))
+            imsz <- tryCatch(if (grepl("\\.(mp4|avi|mov|webm|m4v)$", image_file[i], ignore.case = TRUE)) av::av_video_info(image_file[i])$video else magick::image_info(magick::image_read(image_file[i])), error = function(e) NULL)
+            if (is.null(imsz) || nrow(imsz) > 1) stop("could not determine dimensions of file: ", image_file[i], "\n")
             blah <- reticulate::py_capture_output(reticulate::py_suppress_warnings(det <- ry7$detect(net, source = image_file[i], conf_thres = conf, iou_thres = nms_conf, classes = classes)))
             imgs <- det[[2]] ## file names, in case we passed e.g. a directory name
             det <- det[[1]]

@@ -20,7 +20,7 @@ def get_model(weights, device='cpu', img_sz=640):
         model.device = device0
         return model
 
-def detect(model, source, augment=True, conf_thres=0.25, iou_thres=0.45, agnostic_nms=True, classes=None):
+def detect(model, source, augment=False, conf_thres=0.25, iou_thres=0.45, agnostic_nms=True, classes=None):
     with torch.no_grad():
         device = select_device(model.device)
         half = device.type != 'cpu'  # half precision only supported on CUDA
