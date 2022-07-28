@@ -10,6 +10,13 @@
 [![R-CMD-check](https://github.com/openvolley/ovmlpy/workflows/R-CMD-check/badge.svg)](https://github.com/openvolley/ovmlpy/actions)
 <!-- badges: end -->
 
+The `ovmlpy` package provides image and video machine learning tools for
+volleyball analytics. It provides similar functionality to the
+[ovml](https://github.com/openvolley/ovml) package, but `ovmlpy` uses a
+Python-based implementation which should offer improved performance.
+`ovmlpy` takes care of installing Python and required dependencies: you
+do not need an existing Python installation on your system.
+
 ## Installation
 
 ``` r
@@ -17,42 +24,42 @@
 remotes::install_github("openvolley/ovmlpy")
 ```
 
-The `ovmlpy` package provides image and video machine learning tools for
-volleyball analytics. It provides similar functionality to the
-[ovml](https://github.com/openvolley/ovml) package, but `ovmlpy` uses a
-Python-based implementation which should offer improved performance.
-`ovmlpy` takes care of installing Python and required dependencies: you
-do not need an existing Python installation on your system. However, if
-you wish to use a GPU card for improved performance you will need to
-ensure that the drivers are installed on your system.
+On first use, you need to tell `ovmlpy` to install Python and some
+required packages. It will install these into a virtual environment, so
+that they do not interfere with other Python installation(s) that you
+might already have on your system:
 
-Note that you probably can’t use `ovml` and `ovmlpy` in the same R
-session, because of conflicts in shared libraries.
+``` r
+ovmlpy::ovml_yolo7_python_setup()
+```
+
+Some other setup/installation notes:
+
+-   if you wish to use a GPU card for improved performance you will need
+    to ensure that the drivers are installed on your system
+
+-   the first time you use a new type of network, it will also download
+    the associated network weights file (\~70MB, depending on network
+    version)
+
+-   note that you probably can’t use `ovml` and `ovmlpy` in the same R
+    session, because of conflicts in shared libraries.
 
 `ovmlpy` includes the [YOLO v7](https://github.com/WongKinYiu/yolov7)
 object detection algorithm and an experimental version of this network
-specifically for detecting volleyballs.
-
-This implementation draws heavily from
-[WongKinYiu/yolov7](https://github.com/WongKinYiu/yolov7).
-
-The first time you use `ovmlpy`, it will download and set up Python in a
-virtual environment for use by this package. The first time use a new
-type of network, it will also download the associated network weights
-file.
+specifically for detecting volleyballs. This implementation draws
+heavily from [WongKinYiu/yolov7](https://github.com/WongKinYiu/yolov7).
 
 ## Example
 
-Construct the network. The first time this function is run for each type
-of network, it will download and cache the network weights file (\~70MB,
-depending on network version).
+Create the network object once …
 
 ``` r
 library(ovmlpy)
 dn <- ovml_yolo()
 ```
 
-Now we can use the network to detect objects in an image:
+… then we can use the network to detect objects in an image:
 
 ``` r
 img <- ovml_example_image()
