@@ -12,7 +12,7 @@ ovml_yolo(version = "7", device = "cpu", weights_file = "auto", ...)
 \item 7 or "7-tiny" : YOLO v7 or v7-tiny
 }}
 
-\item{device}{string: "cpu" or 0, 1, 2 etc for GPU devices}
+\item{device}{string or numeric: "cpu" or 0, 1, 2 etc for GPU devices}
 
 \item{weights_file}{string: either the path to the weights file that already exists on your system or "auto". If "auto", the weights file will be downloaded if necessary and stored in the directory given by \code{\link[=ovml_cache_dir]{ovml_cache_dir()}}}
 
