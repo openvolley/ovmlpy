@@ -2,13 +2,19 @@
 % Please edit documentation in R/yolov7_python.R
 \name{ovml_yolo7_python_setup}
 \alias{ovml_yolo7_python_setup}
+\alias{ovml_yolo7_python_envname}
+\alias{ovml_yolo7_python_envpath}
 \title{Install system requirements for using YOLO v7 via Python}
 \usage{
 ovml_yolo7_python_setup()
+
+ovml_yolo7_python_envname()
+
+ovml_yolo7_python_envpath()
 }
 \value{
 \code{TRUE} (invisibly) on success
 }
 \description{
-Install system requirements for using YOLO v7 via Python
+Python and its required packages are installed into a virtual environment. \code{ovml_yolo7_python_envname()} returns the name of the virtual environment used, and \code{ovml_yolo7_python_envpath()} its path on the file system.
 }

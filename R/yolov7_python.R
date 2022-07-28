@@ -1,5 +1,7 @@
 #' Install system requirements for using YOLO v7 via Python
 #'
+#' Python and its required packages are installed into a virtual environment. `ovml_yolo7_python_envname()` returns the name of the virtual environment used, and `ovml_yolo7_python_envpath()` its path on the file system.
+#'
 #' @return `TRUE` (invisibly) on success
 #'
 #' @export
@@ -8,11 +10,9 @@ ovml_yolo7_python_setup <- function() {
     pyexe <- reticulate::install_python()
 
     ## 2. create the yolov7 virtual environment if needed, or find the existing on
-    envname <- "ovml-yolov7"
+    envname <- ovml_yolo7_python_envname()
     if (!envname %in% reticulate::virtualenv_list()) {
         reticulate::virtualenv_create(envname, python = reticulate::install_python(), packages = c("opencv-python", "torch", "pandas", "torchvision", "tqdm", "matplotlib", "seaborn", "pyyaml"))
-        ## or create without packages and then
-        ## reticulate::virtualenv_install(envname, packages = c("opencv-python", "torch", "pandas", "torchvision", "tqdm", "matplotlib", "seaborn", "pyyaml"))
     }
 
     ## 3. install yolov7 if needed from https://github.com/WongKinYiu/yolov7
@@ -24,13 +24,21 @@ ovml_yolo7_python_setup <- function() {
 
 }
 
+#' @rdname ovml_yolo7_python_setup
+#' @export
+ovml_yolo7_python_envname <- function() "ovml-yolov7"
+
+#' @rdname ovml_yolo7_python_setup
+#' @export
+ovml_yolo7_python_envpath <- function() file.path(reticulate::virtualenv_root(), ovml_yolo7_python_envname)
+
 ovml_yolo7_python_dir <- function(install = FALSE) {
     y7dir <- rappdirs::user_data_dir("ovml", appauthor = "openvolley")
-    y7dir <- file.path(y7dir, "yolov7")
+    y7dir <- normalizePath(file.path(y7dir, "yolov7"))
     if (!dir.exists(y7dir)) dir.create(y7dir, recursive = TRUE)
     det_exe <- dir(y7dir, recursive = TRUE, full.names = TRUE, pattern = "detect\\.py")
     if (length(det_exe) < 1 && install) {
-        tf <- tempfile(pattern = ".zip")
+        tf <- tempfile(fileext = ".zip")
         download.file("https://github.com/WongKinYiu/yolov7/archive/refs/heads/main.zip", destfile = tf)
         utils::unzip(tf, exdir = y7dir)
     }
@@ -95,7 +103,7 @@ ovml_yolo <- function(version = "7", device = "cpu", weights_file = "auto", ...)
     }
     weights_file <- tryCatch(normalizePath(weights_file, mustWork = TRUE), error = function(e) NULL)
     if (is.null(weights_file) || !file.exists(weights_file)) stop("weights file does not exist")
-    envname <- "ovml-yolov7"
+    envname <- ovml_yolo7_python_envname()
     reticulate::use_virtualenv(envname)
     ## re-copy our py file in case this package has been updated
     file.copy(system.file("extdata/yolov7/python/yolor.py", package = "ovmlpy", mustWork = TRUE), ovml_yolo7_python_dir(), overwrite = TRUE)
