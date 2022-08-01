@@ -126,7 +126,7 @@ ovml_yolo <- function(version = "7", device = "cpu", weights_file = "auto", ...)
 #' @param ... : currently ignored
 # @param batch_size integer: the number of images to process as a batch. Increasing `batch_size` will make processing of multiple images faster, but requires more memory
 #'
-#' @return A data.frame with columns "image_number", "image_file", "class", "score", "xmin", "xmax", "ymin", "ymax"
+#' @return A data.frame with columns "image_number", "image_file", "class", "score", "xmin", "xmax", "ymin", "ymax", "frame"
 #'
 #' @seealso [ovml_yolo()]
 #'
@@ -163,6 +163,7 @@ ovml_yolo_detect <- function(net, image_file, conf = 0.25, nms_conf = 0.45, clas
                     this$image_number <- z[[1]]
                     this$image_file <- z[[2]]
                 }
+                this$frame <- NA_integer_
                 this
             }))
         }))
@@ -176,11 +177,11 @@ ovml_yolo_detect <- function(net, image_file, conf = 0.25, nms_conf = 0.45, clas
             imgs <- det[[2]] ## file names, in case we passed e.g. a directory name
             det <- det[[1]]
             if (nrow(det) > 0) {
-                ## dets are class xywh conf (xywh normalized)
-                data.frame(outer_i = i, image_number = as.integer(det[, 1]), class = net$names[det[, 2] + 1L], score = det[, 7], xmin = round((det[, 3] - det[, 5] / 2) * imsz$width), xmax = round((det[, 3] + det[, 5] / 2) * imsz$width), ymax = round((1 - det[, 4] + det[, 6] / 2) * imsz$height), ymin = round((1 - det[, 4] - det[, 6] / 2) * imsz$height), image_file = imgs[det[, 1]])
+                ## dets are image_num class xywh conf frame (xywh normalized)
+                data.frame(outer_i = i, image_number = as.integer(det[, 1]), class = net$names[det[, 2] + 1L], score = det[, 7], xmin = round((det[, 3] - det[, 5] / 2) * imsz$width), xmax = round((det[, 3] + det[, 5] / 2) * imsz$width), ymax = round((1 - det[, 4] + det[, 6] / 2) * imsz$height), ymin = round((1 - det[, 4] - det[, 6] / 2) * imsz$height), image_file = imgs[det[, 1]], frame = det[, 8])
             } else {
                 ## placeholder row
-                data.frame(outer_i = i, image_number = 1L, class = NA_integer_, score = NA_real_, xmin = NA_real_, xmax = NA_real_, ymax = NA_real_, ymin = NA_real_, image_file = NA_character_)
+                data.frame(outer_i = i, image_number = 1L, class = NA_integer_, score = NA_real_, xmin = NA_real_, xmax = NA_real_, ymax = NA_real_, ymin = NA_real_, image_file = NA_character_, frame = NA_integer_)
             }
         }))
     }

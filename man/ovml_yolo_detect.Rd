@@ -30,7 +30,7 @@ ovml_yolo_detect(
 \item{...}{: currently ignored}
 }
 \value{
-A data.frame with columns "image_number", "image_file", "class", "score", "xmin", "xmax", "ymin", "ymax"
+A data.frame with columns "image_number", "image_file", "class", "score", "xmin", "xmax", "ymin", "ymax", "frame"
 }
 \description{
 Works on a single input image only, at the moment.

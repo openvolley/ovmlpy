@@ -56,7 +56,7 @@ def detect(model, source, augment=False, conf_thres=0.25, iou_thres=0.45, agnost
                     # Write results
                     for *xyxy, conf, cls in reversed(det):
                             xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                            line = (imnum, cls.tolist(), *xywh, conf.tolist())
+                            line = (imnum, cls.tolist(), *xywh, conf.tolist(), frame)
                             out.append(line)
     return [np.array(out), pths]
 
