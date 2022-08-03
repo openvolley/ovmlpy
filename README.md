@@ -20,7 +20,12 @@ do not need an existing Python installation on your system.
 ## Installation
 
 ``` r
-## install.packages("remotes")
+install.packages("ovmlpy", repos = c("https://openvolley.r-universe.dev",
+                                         "https://cloud.r-project.org"))
+
+## or
+
+## install.packages("remotes") ## if needed
 remotes::install_github("openvolley/ovmlpy")
 ```
 

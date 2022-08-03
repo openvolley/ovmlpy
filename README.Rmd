@@ -27,7 +27,12 @@ The `ovmlpy` package provides image and video machine learning tools for volleyb
 ## Installation
 
 ```{r eval = FALSE}
-## install.packages("remotes")
+install.packages("ovmlpy", repos = c("https://openvolley.r-universe.dev",
+                                         "https://cloud.r-project.org"))
+
+## or
+
+## install.packages("remotes") ## if needed
 remotes::install_github("openvolley/ovmlpy")
 
 ```
