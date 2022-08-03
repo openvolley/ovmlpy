@@ -6,6 +6,8 @@ Authors@R: c(person("Ben", "Raymond", role = c("aut", "cre"), email = "ben@untan
              person("openvolley.org", role = "org"))
 Description: Image and video machine learning tools, for application to volleyball analytics.
 Depends: R (>= 3.3.0)
+URL: https://ovmlpy.openvolley.org, https://github.com/openvolley/ovmlpy
+BugReports: https://github.com/openvolley/ovmlpy/issues
 Imports:
   assertthat,
   av,
