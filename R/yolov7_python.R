@@ -54,7 +54,7 @@ ovml_yolo7_python_dir <- function(install = FALSE) {
 #' @param version integer or string: one of
 #' - 7 or "7-tiny" : YOLO v7 or v7-tiny
 #'
-#' @param device string or numeric: "cpu" or 0, 1, 2 etc for GPU devices
+#' @param device string or numeric: "cpu" or 0, 1, 2 etc for GPU devices. Defaults to 0 but will silently fall back to "cpu" if torch reports that CUDA is not available
 #' @param weights_file string: either the path to the weights file that already exists on your system or "auto". If "auto", the weights file will be downloaded if necessary and stored in the directory given by [ovml_cache_dir()]
 #' @param ... : currently ignored
 #'
@@ -69,10 +69,13 @@ ovml_yolo7_python_dir <- function(install = FALSE) {
 #' }
 #'
 #' @export
-ovml_yolo <- function(version = "7", device = "cpu", weights_file = "auto", ...) {
+ovml_yolo <- function(version = "7", device = 0, weights_file = "auto", ...) {
     if (is.null(ovml_yolo7_python_dir())) stop("cannot find system dependencies, have you run ovml_yolo7_python_setup()?")
     if (is.numeric(version)) version <- as.character(version)
+    device_was_specified <- !missing(device)
     if (is.numeric(device)) device <- as.character(device)
+    assert_that(is.string(device))
+    device <- tolower(device)
     assert_that(version %in% c("7", "7-tiny", "7-mvb", "7-tiny-mvb", "7-w6-pose"))
     image_size <- 640L
     ## sort out the weights file
@@ -105,6 +108,11 @@ ovml_yolo <- function(version = "7", device = "cpu", weights_file = "auto", ...)
     if (is.null(weights_file) || !file.exists(weights_file)) stop("weights file does not exist")
     envname <- ovml_yolo7_python_envname()
     reticulate::use_virtualenv(envname)
+    have_cuda <- reticulate::py_run_string("import torch\ncuda=torch.cuda.is_available()")$cuda
+    if (device != "cpu" && !have_cuda) {
+        if (device_was_specified) warning("'cuda' device not available, using 'cpu'")
+        device <- "cpu"
+    }
     ## re-copy our py file in case this package has been updated
     file.copy(system.file("extdata/yolov7/python/yolor.py", package = "ovmlpy", mustWork = TRUE), ovml_yolo7_python_dir(), overwrite = TRUE)
     ry7 <- reticulate::import_from_path("yolor", path = ovml_yolo7_python_dir())
