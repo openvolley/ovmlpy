@@ -16,5 +16,5 @@ test_that("basic inference", {
 
 
 test_that("cuda fails on cpu-only system", {
-    expect_error(ovml_yolo(device = 0), "CUDA unavailable")
+    expect_warning(ovml_yolo(device = 0), "device not available")
 })
