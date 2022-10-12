@@ -186,6 +186,7 @@ ovml_yolo_detect <- function(net, image_file, conf = 0.25, nms_conf = 0.45, clas
             det <- det[[1]]
             if (nrow(det) > 0) {
                 ## dets are image_num class xywh conf frame (xywh normalized)
+                ## image_num is the frame number if the input was a video
                 data.frame(outer_i = i, image_number = as.integer(det[, 1]), class = net$names[det[, 2] + 1L], score = det[, 7], xmin = round((det[, 3] - det[, 5] / 2) * imsz$width), xmax = round((det[, 3] + det[, 5] / 2) * imsz$width), ymax = round((1 - det[, 4] + det[, 6] / 2) * imsz$height), ymin = round((1 - det[, 4] - det[, 6] / 2) * imsz$height), image_file = imgs[det[, 1]], frame = det[, 8])
             } else {
                 ## placeholder row
@@ -194,7 +195,16 @@ ovml_yolo_detect <- function(net, image_file, conf = 0.25, nms_conf = 0.45, clas
         }))
     }
     ## re-count image numbers
-    ## note that image numbers are not guaranteed to be correct if directory names have been passed in
-    out$image_number <- as.integer(c(0, cumsum(diff(out$outer_i) | diff(out$image_number) != 0))) + 1L
+    ## if we've passed in multiple images, image number should be the index of those in the input vector
+    ## but note also that if an input was a video, its image numbers are frame numbers and might not start from 1
+    ## note that image numbers are not guaranteed to be correct if directory names have been passed in (but directory names aren't supported anyway, at least not yet?)
+    imn <- rep(NA_integer_, nrow(out))
+    lastmax <- 0L
+    for (oi in unique(out$outer_i)) {
+        idx <- which(out$outer_i == oi)
+        imn[idx] <- out$image_number[idx] + lastmax
+        lastmax <- max(imn[idx])
+    }
+    out$image_number <- imn
     out[!is.na(out$image_file), setdiff(names(out), "outer_i")]
 }
