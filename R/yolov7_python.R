@@ -12,7 +12,7 @@ ovml_yolo7_python_setup <- function() {
     ## 2. create the yolov7 virtual environment if needed, or find the existing on
     envname <- ovml_yolo7_python_envname()
     if (!envname %in% reticulate::virtualenv_list()) {
-        reticulate::virtualenv_create(envname, python = reticulate::install_python(), packages = c("opencv-python", "torch", "pandas", "torchvision", "tqdm", "matplotlib", "seaborn", "pyyaml"))
+        reticulate::virtualenv_create(envname, python = reticulate::install_python(), packages = c("opencv-python", "torch", "pandas", "torchvision", "tqdm", "matplotlib", "seaborn", "pyyaml", "scipy"))
     }
 
     ## 3. install yolov7 if needed from https://github.com/WongKinYiu/yolov7
@@ -30,7 +30,7 @@ ovml_yolo7_python_envname <- function() "ovml-yolov7"
 
 #' @rdname ovml_yolo7_python_setup
 #' @export
-ovml_yolo7_python_envpath <- function() file.path(reticulate::virtualenv_root(), ovml_yolo7_python_envname)
+ovml_yolo7_python_envpath <- function() file.path(reticulate::virtualenv_root(), ovml_yolo7_python_envname())
 
 ovml_yolo7_python_dir <- function(install = FALSE) {
     y7dir <- rappdirs::user_data_dir("ovml", appauthor = "openvolley")
