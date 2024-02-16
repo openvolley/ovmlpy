@@ -16,7 +16,11 @@ test_that("basic inference", {
 
 
 test_that("cuda fails on cpu-only system", {
-    have_cuda <- reticulate::py_run_string("import torch\ncuda=torch.cuda.is_available()")$cuda
+    have_cuda <- tryCatch({
+        reticulate::use_virtualenv(ovml_yolo7_python_envname())
+        reticulate::py_run_string("import torch\ncuda=torch.cuda.is_available()")$cuda
+    }, error = function(e) NA)
+    skip_if(is.na(have_cuda))
     if (!have_cuda) {
         expect_warning(ovml_yolo(device = 0), "device not available")
     }
