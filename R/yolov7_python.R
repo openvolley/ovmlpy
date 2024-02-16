@@ -11,10 +11,13 @@ ovml_yolo7_python_setup <- function() {
 
     ## 2. create the yolov7 virtual environment if needed, or find the existing on
     envname <- ovml_yolo7_python_envname()
+    pkglist <- c("opencv-python", "torch", "pandas", "torchvision", "tqdm", "matplotlib", "seaborn", "pyyaml", "scipy")
     if (!envname %in% reticulate::virtualenv_list()) {
-        reticulate::virtualenv_create(envname, python = reticulate::install_python(), packages = c("opencv-python", "torch", "pandas", "torchvision", "tqdm", "matplotlib", "seaborn", "pyyaml", "scipy"))
+        reticulate::virtualenv_create(envname, python = reticulate::install_python(), packages = pkglist)
+    } else {
+        ## make sure all pkgs are installed
+        reticulate::virtualenv_install(envname, packages = pkglist)
     }
-
     ## 3. install yolov7 if needed from https://github.com/WongKinYiu/yolov7
     y7dir <- ovml_yolo7_python_dir(install = TRUE)
     ## 4. copy our py file
